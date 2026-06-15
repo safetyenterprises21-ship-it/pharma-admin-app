@@ -97,16 +97,29 @@ class _OrderDetailsScreenState
     if (result == null) return;
 
     final billedQty =
-        int.tryParse(result) ?? 0;
+    int.tryParse(result) ?? 0;
+print('ITEM ID = ${item['id']}');
+print('ORDER ID = ${item['order_id']}');
+print('QTY = $billedQty');
+print('FULL ITEM:');
+print(item);
 
-    await supabase
-        .from('order_items')
-        .update({
+print('ITEM ID = ${item['id']}');
+
+final response = await supabase
+    .from('order_items')
+    .update({
       'billed_qty': billedQty,
-    }).eq(
-      'id',
-      item['id'],
-    );
+    })
+    .eq('id', item['id'])
+    .select();
+
+print('UPDATED ROW:');
+print(response);
+print('UPDATED ROW:');
+print(response);
+
+await loadItems();
 
     await loadItems();
   }
@@ -352,11 +365,8 @@ class _OrderDetailsScreenState
 
                                 Expanded(
                                   child:
-                                      GestureDetector(
-                                    onTap: () =>
-                                        billItem(
-                                      item,
-                                    ),
+                                      Container(
+                                  
                                     child:
                                         Container(
                                       padding:
@@ -386,18 +396,34 @@ class _OrderDetailsScreenState
                                                   11,
                                             ),
                                           ),
-                                          Text(
-                                            "${item['billed_qty'] ?? 0}",
-                                            style:
-                                                const TextStyle(
-                                              fontSize:
-                                                  16,
-                                              fontWeight:
-                                                  FontWeight.bold,
-                                              color:
-                                                  Colors.green,
-                                            ),
-                                          ),
+                                         SizedBox(
+  width: 50,
+  child: TextFormField(
+    initialValue:
+        "${item['billed_qty'] ?? 0}",
+    keyboardType:
+        TextInputType.number,
+    textAlign: TextAlign.center,
+    decoration:
+        const InputDecoration(
+      border: InputBorder.none,
+    ),
+    onChanged: (value) async {
+  final billedQty =
+      int.tryParse(value) ?? 0;
+
+  await supabase
+      .from('order_items')
+      .update({
+    'billed_qty': billedQty,
+  })
+      .eq(
+    'id',
+    item['id'],
+  );
+},
+  ),
+),
                                         ],
                                       ),
                                     ),

@@ -196,10 +196,6 @@ final searchController =
                               ),
 
                               Text(
-                                "👤 ${order['owner_name'] ?? ''}",
-                              ),
-
-                              Text(
                                 "📞 ${order['mobile_number'] ?? ''}",
                               ),
 

@@ -51,6 +51,66 @@ class _OrderDetailsScreenState
     }
   }
 
+  Future<void> billItem(
+      Map<String, dynamic> item) async {
+    final controller =
+        TextEditingController(
+      text:
+          (item['billed_qty'] ?? 0).toString(),
+    );
+
+    final result =
+        await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title:
+              const Text("Enter Billed Qty"),
+          content: TextField(
+            controller: controller,
+            keyboardType:
+                TextInputType.number,
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(context),
+              child: const Text(
+                "Cancel",
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.pop(
+                context,
+                controller.text,
+              ),
+              child:
+                  const Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == null) return;
+
+    final billedQty =
+        int.tryParse(result) ?? 0;
+
+    await supabase
+        .from('order_items')
+        .update({
+      'billed_qty': billedQty,
+    }).eq(
+      'id',
+      item['id'],
+    );
+
+    await loadItems();
+  }
+
   Future<void> updateStatus(
       String status) async {
     await supabase
@@ -67,7 +127,7 @@ class _OrderDetailsScreenState
           .showSnackBar(
         SnackBar(
           content:
-              Text('Status updated: $status'),
+              Text("Status: $status"),
         ),
       );
 
@@ -75,97 +135,21 @@ class _OrderDetailsScreenState
     }
   }
 
-  Future<void> billItem(
-    Map<String, dynamic> item) async {
+  Color getStatusColor(String status) {
+    switch (status) {
+      case 'Processing':
+        return Colors.orange;
 
-  final controller =
-      TextEditingController(
-    text: item['quantity'].toString(),
-  );
+      case 'Billed':
+        return Colors.blue;
 
-  final result =
-      await showDialog<String>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text(
-          'Enter Billed Qty',
-        ),
-        content: TextField(
-          controller: controller,
-          keyboardType:
-              TextInputType.number,
-          decoration:
-              const InputDecoration(
-            labelText: 'Billed Qty',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () =>
-                Navigator.pop(
-              context,
-              controller.text,
-            ),
-            child: const Text(
-              'Save',
-            ),
-          ),
-        ],
-      );
-    },
-  );
+      case 'Delivered':
+        return Colors.green;
 
-  if (result == null) return;
-
-  final billedQty =
-      int.tryParse(result) ?? 0;
-
-  final orderedQty =
-      item['quantity'] ?? 0;
-
-  await supabase
-      .from('order_items')
-      .update({
-    'billed_qty': billedQty,
-    'billing_status':
-        billedQty >= orderedQty
-            ? 'Billed'
-            : 'Short',
-  })
-      .eq('id', item['id']);
-
-  await loadItems();
-
-  if (mounted) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-      const SnackBar(
-        content:
-            Text('Billing Updated'),
-      ),
-    );
+      default:
+        return Colors.red;
+    }
   }
-}
-  Color billingColor(String status) {
-  switch (status) {
-    case 'Billed':
-      return Colors.green;
-
-    case 'Short':
-      return Colors.red;
-
-    default:
-      return Colors.orange;
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -189,40 +173,69 @@ class _OrderDetailsScreenState
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
                 children: [
+
+                  /// SHOP CARD
+
                   Card(
+                    elevation: 2,
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius
+                              .circular(14),
+                    ),
                     child: Padding(
                       padding:
                           const EdgeInsets.all(
-                        16,
-                      ),
+                              12),
                       child: Column(
                         crossAxisAlignment:
                             CrossAxisAlignment
                                 .start,
                         children: [
                           Text(
-                            "🏪 Shop: ${order['shop_name'] ?? ''}",
-                          ),
-                          const SizedBox(
-                              height: 8),
-                          Text(
-                            "👤 Owner: ${order['owner_name'] ?? ''}",
-                          ),
-                          const SizedBox(
-                              height: 8),
-                          Text(
-                            "📞 Mobile: ${order['mobile_number'] ?? ''}",
-                          ),
-                          const SizedBox(
-                              height: 8),
-                          Text(
-                            "📦 Status: ${order['status'] ?? 'Pending'}",
+                            order['shop_name'] ??
+                                '',
                             style:
                                 const TextStyle(
+                              fontSize: 16,
                               fontWeight:
-                                  FontWeight.bold,
+                                  FontWeight
+                                      .bold,
                             ),
                           ),
+
+                          const SizedBox(
+                              height: 6),
+
+                          Text(
+                            "📞 ${order['mobile_number'] ?? ''}",
+                          ),
+
+                          const SizedBox(
+                              height: 10),
+
+                          Container(
+  width: double.infinity,
+  padding: const EdgeInsets.symmetric(
+    vertical: 10,
+  ),
+  alignment: Alignment.center,
+  decoration: BoxDecoration(
+    color: getStatusColor(
+      order['status'] ?? 'Pending',
+    ),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Text(
+    order['status'] ?? 'Pending',
+    style: const TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.bold,
+      fontSize: 15,
+    ),
+  ),
+),
                         ],
                       ),
                     ),
@@ -233,7 +246,7 @@ class _OrderDetailsScreenState
                   const Text(
                     "Medicines",
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight:
                           FontWeight.bold,
                     ),
@@ -241,106 +254,157 @@ class _OrderDetailsScreenState
 
                   const SizedBox(height: 10),
 
+                  /// MEDICINE LIST
+
                   ...items.map(
                     (item) => Card(
                       margin:
                           const EdgeInsets.only(
-                        bottom: 10,
+                        bottom: 8,
                       ),
+                      elevation: 1,
                       child: Padding(
                         padding:
-                            const EdgeInsets
-                                .all(12),
+                            const EdgeInsets.all(
+                                8),
                         child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment
-                                  .start,
                           children: [
-                            Text(
-                              item['product_name'] ??
-                                  '',
-                              style:
-                                  const TextStyle(
-                                fontWeight:
-                                    FontWeight
-                                        .bold,
-                                fontSize: 16,
-                              ),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.medication,
+                                  size: 18,
+                                  color:
+                                      Colors.blue,
+                                ),
+
+                                const SizedBox(
+                                    width: 8),
+
+                                Expanded(
+                                  child: Text(
+                                    item['product_name'] ??
+                                        '',
+                                    style:
+                                        const TextStyle(
+                                      fontSize:
+                                          14,
+                                      fontWeight:
+                                          FontWeight
+                                              .w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
 
                             const SizedBox(
                                 height: 8),
 
-                            Text(
-                              "Ordered Qty: ${item['quantity'] ?? 0}",
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    padding:
+                                        const EdgeInsets
+                                            .symmetric(
+                                      vertical:
+                                          8,
+                                    ),
+                                    decoration:
+                                        BoxDecoration(
+                                      color: Colors
+                                          .orange
+                                          .shade50,
+                                      borderRadius:
+                                          BorderRadius
+                                              .circular(
+                                        10,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        const Text(
+                                          "Ordered",
+                                          style:
+                                              TextStyle(
+                                            fontSize:
+                                                11,
+                                          ),
+                                        ),
+                                        Text(
+                                          "${item['quantity'] ?? 0}",
+                                          style:
+                                              const TextStyle(
+                                            fontSize:
+                                                16,
+                                            fontWeight:
+                                                FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(
+                                    width: 8),
+
+                                Expanded(
+                                  child:
+                                      GestureDetector(
+                                    onTap: () =>
+                                        billItem(
+                                      item,
+                                    ),
+                                    child:
+                                        Container(
+                                      padding:
+                                          const EdgeInsets
+                                              .symmetric(
+                                        vertical:
+                                            8,
+                                      ),
+                                      decoration:
+                                          BoxDecoration(
+                                        color: Colors
+                                            .green
+                                            .shade50,
+                                        borderRadius:
+                                            BorderRadius.circular(
+                                          10,
+                                        ),
+                                      ),
+                                      child:
+                                          Column(
+                                        children: [
+                                          const Text(
+                                            "Billed",
+                                            style:
+                                                TextStyle(
+                                              fontSize:
+                                                  11,
+                                            ),
+                                          ),
+                                          Text(
+                                            "${item['billed_qty'] ?? 0}",
+                                            style:
+                                                const TextStyle(
+                                              fontSize:
+                                                  16,
+                                              fontWeight:
+                                                  FontWeight.bold,
+                                              color:
+                                                  Colors.green,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-
-                            Text(
-                              "Billed Qty: ${item['billed_qty'] ?? 0}",
-                            ),
-
-                            Text(
-                              "Scheme: ${item['scheme'] ?? ''}",
-                            ),
-
-                            const SizedBox(
-                                height: 10),
-
-                            Container(
-                              padding:
-                                  const EdgeInsets
-                                      .symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration:
-                                  BoxDecoration(
-                                color:
-                                    billingColor(
-                                  item['billing_status'] ??
-                                      'Pending',
-                                ),
-                                borderRadius:
-                                    BorderRadius
-                                        .circular(
-                                  20,
-                                ),
-                              ),
-                              child: Text(
-                                item['billing_status'] ??
-                                    'Pending',
-                                style:
-                                    const TextStyle(
-                                  color: Colors
-                                      .white,
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(
-                                height: 10),
-
-                            if (item['billing_status'] !=
-                                'Billed')
-                              ElevatedButton
-                                  .icon(
-                                onPressed: () {
-                                  billItem(
-  item,
-);
-                                },
-                                icon:
-                                    const Icon(
-                                  Icons.check,
-                                ),
-                                label:
-                                    const Text(
-                                  'Bill Qty',
-                                ),
-                              ),
                           ],
                         ),
                       ),
@@ -350,9 +414,9 @@ class _OrderDetailsScreenState
                   const SizedBox(height: 20),
 
                   const Text(
-                    "Update Order Status",
+                    "Update Status",
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight:
                           FontWeight.bold,
                     ),
@@ -360,33 +424,46 @@ class _OrderDetailsScreenState
 
                   const SizedBox(height: 10),
 
-                  ElevatedButton(
-                    onPressed: () =>
-                        updateStatus(
-                      'Processing',
-                    ),
-                    child: const Text(
-                      'Processing',
-                    ),
-                  ),
-
-                  ElevatedButton(
-                    onPressed: () =>
-                        updateStatus(
-                      'Billed',
-                    ),
-                    child: const Text(
-                      'Billed',
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () =>
+                          updateStatus(
+                        'Processing',
+                      ),
+                      child: const Text(
+                        'Processing',
+                      ),
                     ),
                   ),
 
-                  ElevatedButton(
-                    onPressed: () =>
-                        updateStatus(
-                      'Delivered',
+                  const SizedBox(height: 8),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () =>
+                          updateStatus(
+                        'Billed',
+                      ),
+                      child: const Text(
+                        'Billed',
+                      ),
                     ),
-                    child: const Text(
-                      'Delivered',
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () =>
+                          updateStatus(
+                        'Delivered',
+                      ),
+                      child: const Text(
+                        'Delivered',
+                      ),
                     ),
                   ),
                 ],

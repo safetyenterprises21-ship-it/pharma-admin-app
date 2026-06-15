@@ -129,44 +129,6 @@ class _AdminDashboardScreenState
     }
   }
 
-  Widget statusCard(
-    String title,
-    int count,
-    Color color,
-  ) {
-    return Expanded(
-      child: Container(
-        padding:
-            const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius:
-              BorderRadius.circular(16),
-        ),
-        child: Column(
-          children: [
-            Text(
-              count.toString(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight:
-                    FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget statusChip(String status) {
     final selected =
         selectedStatus == status;
@@ -195,12 +157,60 @@ class _AdminDashboardScreenState
       backgroundColor:
           const Color(0xFFF5F7FA),
 
-      appBar: AppBar(
-        title: const Text(
-          "Pharma Admin",
+    appBar: AppBar(
+  elevation: 0,
+  backgroundColor: const Color(0xFF1E293B),
+
+  title: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        "Safety Enterprises",
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
         ),
-        centerTitle: true,
       ),
+
+      Text(
+        "${orders.length} Orders",
+        style: const TextStyle(
+          fontSize: 12,
+          color: Colors.white70,
+        ),
+      ),
+    ],
+  ),
+
+  actions: [
+    Padding(
+      padding: const EdgeInsets.only(
+        right: 16,
+      ),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius:
+                BorderRadius.circular(20),
+          ),
+          child: Text(
+            "${countStatus('Pending')} Pending",
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    ),
+  ],
+),
 
       floatingActionButton:
           FloatingActionButton(
@@ -224,88 +234,42 @@ class _AdminDashboardScreenState
                 ),
                 children: [
 
-                  /// SUMMARY
-
-                  Row(
-                    children: [
-                      statusCard(
-                        'Pending',
-                        countStatus(
-                          'Pending',
-                        ),
-                        Colors.red,
-                      ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      statusCard(
-                        'Processing',
-                        countStatus(
-                          'Processing',
-                        ),
-                        Colors.orange,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 10,
-                  ),
-
-                  Row(
-                    children: [
-                      statusCard(
-                        'Billed',
-                        countStatus(
-                          'Billed',
-                        ),
-                        Colors.blue,
-                      ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      statusCard(
-                        'Delivered',
-                        countStatus(
-                          'Delivered',
-                        ),
-                        Colors.green,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 20,
-                  ),
-
                   /// SEARCH
-
-                  TextField(
-                    controller:
-                        searchController,
-                    decoration:
-                        InputDecoration(
-                      hintText:
-                          'Search Order / Shop / Mobile',
-                      prefixIcon:
-                          const Icon(
-                        Icons.search,
-                      ),
-                      border:
-                          OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius
-                                .circular(
-                          14,
-                        ),
-                      ),
-                    ),
-                    onChanged: (_) {
-                      setState(() {
-                        applyFilters();
-                      });
-                    },
-                  ),
+Container(
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius:
+        BorderRadius.circular(16),
+    boxShadow: const [
+      BoxShadow(
+        color: Colors.black12,
+        blurRadius: 8,
+        offset: Offset(0, 2),
+      ),
+    ],
+  ),
+  child: TextField(
+    controller: searchController,
+    decoration: InputDecoration(
+      hintText:
+          "Search shop, mobile or order",
+      prefixIcon: const Icon(
+        Icons.search,
+        color: Color(0xFF1E293B),
+      ),
+      border: InputBorder.none,
+      contentPadding:
+          const EdgeInsets.symmetric(
+        vertical: 16,
+      ),
+    ),
+    onChanged: (_) {
+      setState(() {
+        applyFilters();
+      });
+    },
+  ),
+),
 
                   const SizedBox(
                     height: 16,
@@ -351,7 +315,8 @@ class _AdminDashboardScreenState
                               'Pending';
 
                       return Card(
-                        elevation: 3,
+                        elevation: 5,
+                        shadowColor: Colors.black12,
                         margin:
                             const EdgeInsets
                                 .only(
@@ -382,90 +347,98 @@ class _AdminDashboardScreenState
                             );
                           },
 
-                          leading:
-                              CircleAvatar(
-                            backgroundColor:
-                                getStatusColor(
-                              status,
-                            ),
-                            child: const Icon(
-                              Icons.receipt,
-                              color:
-                                  Colors.white,
-                            ),
-                          ),
+                          leading: Container(
+  width: 50,
+  height: 50,
+  decoration: BoxDecoration(
+    color: getStatusColor(status)
+        .withOpacity(0.15),
+    borderRadius:
+        BorderRadius.circular(12),
+  ),
+  child: Icon(
+    Icons.local_shipping_outlined,
+    color: getStatusColor(status),
+  ),
+),
 
-                          title: Text(
-                            order[
-                                    'order_number'] ??
-                                '',
-                            style:
-                                const TextStyle(
-                              fontWeight:
-                                  FontWeight
-                                      .bold,
-                            ),
-                          ),
+  title: Row(
+  children: [
+    Expanded(
+      child: Text(
+        order['shop_name'] ?? 'Medical Store',
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+        ),
+      ),
+    ),
 
-                          subtitle: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment
-                                    .start,
-                            children: [
-                              const SizedBox(
-                                  height:
-                                      6),
+    Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: getStatusColor(status),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        status,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    ),
+  ],
+),
 
-                              Text(
-                                "🏪 ${order['shop_name'] ?? ''}",
-                              ),
+  subtitle: Padding(
+  padding: const EdgeInsets.only(top: 8),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
 
-                              Text(
-                                "👤 ${order['owner_name'] ?? ''}",
-                              ),
+      Text(
+        "#${order['order_number']
+            .toString()
+            .substring(
+              order['order_number']
+                      .toString()
+                      .length -
+                  4,
+            )}",
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+        ),
+      ),
 
-                              Text(
-                                "📞 ${order['mobile_number'] ?? ''}",
-                              ),
+      const SizedBox(height: 6),
 
-                              const SizedBox(
-                                  height:
-                                      6),
+      Text(
+        "📞 ${order['mobile_number'] ?? 'N/A'}",
+        style: const TextStyle(
+          fontSize: 14,
+        ),
+      ),
+      const SizedBox(height: 6),
 
-                              Container(
-                                padding:
-                                    const EdgeInsets
-                                        .symmetric(
-                                  horizontal:
-                                      10,
-                                  vertical: 4,
-                                ),
-                                decoration:
-                                    BoxDecoration(
-                                  color:
-                                      getStatusColor(
-                                    status,
-                                  ),
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                    20,
-                                  ),
-                                ),
-                                child: Text(
-                                  status,
-                                  style:
-                                      const TextStyle(
-                                    color: Colors
-                                        .white,
-                                    fontWeight:
-                                        FontWeight
-                                            .bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+Text(
+  order['created_at'] != null
+      ? order['created_at']
+          .toString()
+          .substring(0, 10)
+      : '',
+  style: const TextStyle(
+    fontSize: 12,
+    color: Colors.grey,
+  ),
+),
+    ],
+  ),
+),
 
                           trailing:
                               const Icon(
